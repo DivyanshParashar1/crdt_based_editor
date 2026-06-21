@@ -1,4 +1,4 @@
-import { Timestamp, RGANode, RGA } from "./RGA";
+import { Timestamp } from "./RGA";
 
 
 export type OperationType = 'insert' | 'delete';
