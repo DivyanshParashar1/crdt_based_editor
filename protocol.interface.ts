@@ -1,4 +1,4 @@
-import { Timestamp } from "./RGA";
+import type { Timestamp } from "./RGA.js";
 
 
 export type OperationType = 'insert' | 'delete';
