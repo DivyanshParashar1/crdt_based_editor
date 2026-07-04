@@ -36,12 +36,17 @@ export class RGA {
     // 3. Traverse list to find originId
     // 4. Apply Lamport tie-breaking if concurrent nodes exist
     // 5. Insert and return the new node's ID
-    insertAfter(originId: Timestamp, value: string): Timestamp | null {
+    insertAfter(originId: Timestamp, value: string, clientTimestamp: Timestamp | null): Timestamp | null {
         // increment local clock
-        this.clock++;
+        if(clientTimestamp == null){
+            clientTimestamp = {clientId: this.client, clock: ++this.clock}
+        }
+        else{
+            this.clock = Math.max(this.clock, clientTimestamp.clock) + 1;
+        }
 
         // create node
-        const nextNode = new RGANode(value, { clientId: this.client, clock: this.clock });
+        const nextNode = new RGANode(value, clientTimestamp);
 
         // traverse list to find originId
         let temp: RGANode | null = this.head;
