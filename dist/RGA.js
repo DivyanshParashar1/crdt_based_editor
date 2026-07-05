@@ -10,6 +10,7 @@ export class RGANode {
         this.next = null;
     }
 }
+export const ROOT = Object.freeze({ clientId: "", clock: 0 });
 export class RGA {
     client;
     clock;
@@ -18,18 +19,23 @@ export class RGA {
         this.client = clientId;
         this.clock = 0;
         const id = { clientId, clock: 0 };
-        this.head = new RGANode("__HEAD__", id);
+        this.head = new RGANode("__HEAD__", ROOT);
     }
     // 1. Increment local clock
     // 2. Create node
     // 3. Traverse list to find originId
     // 4. Apply Lamport tie-breaking if concurrent nodes exist
     // 5. Insert and return the new node's ID
-    insertAfter(originId, value) {
+    insertAfter(originId, value, clientTimestamp) {
         // increment local clock
-        this.clock++;
+        if (clientTimestamp == null) {
+            clientTimestamp = { clientId: this.client, clock: ++this.clock };
+        }
+        else {
+            this.clock = Math.max(this.clock, clientTimestamp.clock) + 1;
+        }
         // create node
-        const nextNode = new RGANode(value, { clientId: this.client, clock: this.clock });
+        const nextNode = new RGANode(value, clientTimestamp);
         // traverse list to find originId
         let temp = this.head;
         while (temp !== null) {

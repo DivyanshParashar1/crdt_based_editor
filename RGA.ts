@@ -17,6 +17,7 @@ export class RGANode {
         this.next = null;
     }
 }
+export const ROOT: Timestamp = Object.freeze({ clientId: "", clock: 0 });
 
 export class RGA {
     private client: string;
@@ -28,7 +29,7 @@ export class RGA {
         this.clock = 0;
 
         const id: Timestamp = { clientId, clock: 0 }
-        this.head = new RGANode("__HEAD__", id);
+        this.head = new RGANode("__HEAD__", ROOT);
     }
 
     // 1. Increment local clock
@@ -38,10 +39,10 @@ export class RGA {
     // 5. Insert and return the new node's ID
     insertAfter(originId: Timestamp, value: string, clientTimestamp: Timestamp | null): Timestamp | null {
         // increment local clock
-        if(clientTimestamp == null){
-            clientTimestamp = {clientId: this.client, clock: ++this.clock}
+        if (clientTimestamp == null) {
+            clientTimestamp = { clientId: this.client, clock: ++this.clock }
         }
-        else{
+        else {
             this.clock = Math.max(this.clock, clientTimestamp.clock) + 1;
         }
 

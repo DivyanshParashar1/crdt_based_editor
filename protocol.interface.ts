@@ -5,7 +5,7 @@ export type OperationType = 'insert' | 'delete';
 
 interface InsertOperation {
     type: 'insert'; //discriminator
-    insertOriginId: Timestamp | null; // lamport id after which we need to insert the new node
+    insertOriginId: Timestamp; // lamport id after which we need to insert the new node
     value: string; // the actual character
     id: Timestamp; // id of the current node, whic his needed to be inserted
 
