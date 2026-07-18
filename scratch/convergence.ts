@@ -35,31 +35,53 @@ const replicaA = new RGA("A");
 const replicaB = new RGA("B");
 
 
-// cases
+// case 1: Both edit with the same clock, and checking convergence
 
-// 1 both edit off the same origin(root) before any sync
-const opFromA = produce(replicaA, ROOT, "A");
-const opFromB = produce(replicaB, ROOT, "B");
+// // 1 both edit off the same origin(root) before any sync
+// const opFromA = produce(replicaA, ROOT, "A");
+// const opFromB = produce(replicaB, ROOT, "B");
 
-// cross deliver
+// // cross deliver
 
-console.log("First round")
-const textA1 = replicaA.getText();
-const textB1 = replicaB.getText();
+// console.log("First round")
+// const textA1 = replicaA.getText();
+// const textB1 = replicaB.getText();
 
-console.log("replicaA:", textA1);
-console.log("replicaB:", textB1);
+// console.log("replicaA:", textA1);
+// console.log("replicaB:", textB1);
 
-console.log(textA1 === textB1 ? "Converged" : "Diverged");
+// console.log(textA1 === textB1 ? "Converged" : "Diverged");
 
-if (opFromB) deliver(replicaA, opFromB);
-if (opFromA) deliver(replicaB, opFromA);
-
-
+// if (opFromB) deliver(replicaA, opFromB);
+// if (opFromA) deliver(replicaB, opFromA);
 
 
-// assertion
-console.log("Second round")
+
+
+// // assertion
+// console.log("Second round")
+
+// const textA = replicaA.getText();
+// const textB = replicaB.getText();
+// console.log("replicaA:", textA);
+// console.log("replicaB:", textB);
+
+// console.log(textA === textB ? "Converged" : "Diverged");
+
+
+
+let first = produce(replicaA, ROOT, "a");
+
+let second = produce(replicaA, ROOT, "b");
+let third;
+if (first !== null) deliver(replicaB, first);
+if (second !== null) deliver(replicaB, second);
+if (second !== null && second !== undefined) {
+    third = produce(replicaB, ROOT, "c");
+    if (third !== null) {
+        deliver(replicaA, third);
+    }
+}
 
 const textA = replicaA.getText();
 const textB = replicaB.getText();
@@ -67,6 +89,18 @@ console.log("replicaA:", textA);
 console.log("replicaB:", textB);
 
 console.log(textA === textB ? "Converged" : "Diverged");
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
