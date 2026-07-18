@@ -29,7 +29,6 @@ export class RGA {
         this.client = clientId;
         this.clock = 0;
 
-        const id: Timestamp = { clientId, clock: 0 }
         this.head = new RGANode("__HEAD__", ROOT);
     }
 
@@ -40,13 +39,13 @@ export class RGA {
     // 5. Insert and return the new node's ID
     insertAfter(originId: Timestamp, value: string, clientTimestamp: Timestamp | null): Timestamp | null {
         // increment local clock
-        if (clientTimestamp == null) {
+        if (clientTimestamp === null) {
             clientTimestamp = { clientId: this.client, clock: ++this.clock }
         }
         else {
             let temp: RGANode | null = this.head;
 
-            while (temp != null) {
+            while (temp !== null) {
                 if (temp.id.clientId === clientTimestamp.clientId && temp.id.clock === clientTimestamp.clock) {
                     return null;
                 }
@@ -73,37 +72,6 @@ export class RGA {
             return null;
         }
 
-        // apply lamport tie-breaking if concurrent nodes exist
-        // find if ther other node exists
-        // let temp2: RGANode | null = temp.next;
-        // one line before we start, its all about winning
-        // while (temp2 !== null) {
-        //     // temp2 is the element with which I need to compare the nextNode
-        //     // if nextNode wins, we break the loop
-        //     // if temp2 wins, temp = temp2 and temp2 = temp2.next
-
-        //     if (nextNode.id.clock > temp2.id.clock) {
-        //         // nextNode wins
-        //         break;
-        //     }
-        //     else if (nextNode.id.clock === temp2.id.clock) {
-        //         // no one won yet
-        //         // we need to check the clientId in order to find the winning node
-        //         if (nextNode.id.clientId > temp2.id.clientId) {
-        //             break;
-        //         }
-        //         else {
-        //             temp = temp2;
-        //             temp2 = temp2.next;
-        //         }
-        //     }
-        //     else {
-        //         // temp2 wins
-        //         temp = temp2;
-        //         temp2 = temp2.next;
-        //     }
-        // }
-
 
         while (temp.next !== null && (
             temp.next.id.clock > nextNode.id.clock || (
@@ -125,14 +93,14 @@ export class RGA {
     delete(id: Timestamp): void {
         // given a timestamp we need to delete
         let temp: RGANode | null = this.head.next;
-        while (temp != null) {
+        while (temp !== null) {
             if (temp.id.clock === id.clock && temp.id.clientId === id.clientId) {
                 temp.isDeleted = true;
                 break;
             }
             temp = temp.next;
         }
-        if (temp == null) console.warn("Node not found");
+        if (temp === null) console.warn("Node not found");
 
 
 
@@ -144,7 +112,7 @@ export class RGA {
         let str: string = "";
         let temp: RGANode | null = this.head.next;
 
-        while (temp != null) {
+        while (temp !== null) {
             if (!temp.isDeleted) {
                 str += temp.value;
             }
