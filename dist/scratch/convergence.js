@@ -41,22 +41,32 @@ const replicaB = new RGA("B");
 // console.log("replicaA:", textA);
 // console.log("replicaB:", textB);
 // console.log(textA === textB ? "Converged" : "Diverged");
-let first = produce(replicaA, ROOT, "a");
-let second = produce(replicaA, ROOT, "b");
-let third;
-if (first !== null)
+// case 2, checking the tiebreaker: clientId
+// let first = produce(replicaA, ROOT, "a");
+// let second = produce(replicaA, ROOT, "b");
+// let third;
+// if (first !== null) deliver(replicaB, first);
+// if (second !== null) deliver(replicaB, second);
+// if (second !== null && second !== undefined) {
+//     third = produce(replicaB, ROOT, "c");
+//     if (third !== null) {
+//         deliver(replicaA, third);
+//     }
+// }
+// const textA = replicaA.getText();
+// const textB = replicaB.getText();
+// console.log("replicaA:", textA);
+// console.log("replicaB:", textB);
+// console.log(textA === textB ? "Converged" : "Diverged");
+// case 3
+const first = produce(replicaA, ROOT, "a");
+if (first !== null) {
     deliver(replicaB, first);
-if (second !== null)
-    deliver(replicaB, second);
-if (second !== null && second !== undefined) {
-    third = produce(replicaB, ROOT, "c");
-    if (third !== null) {
-        deliver(replicaA, third);
-    }
+    deliver(replicaB, first);
 }
-const textA = replicaA.getText();
 const textB = replicaB.getText();
-console.log("replicaA:", textA);
-console.log("replicaB:", textB);
+const textA = replicaA.getText();
+console.log(textA);
+console.log(textB);
 console.log(textA === textB ? "Converged" : "Diverged");
 //# sourceMappingURL=convergence.js.map

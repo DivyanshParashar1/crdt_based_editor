@@ -31,9 +31,16 @@ export class RGA {
         if (clientTimestamp == null) {
             clientTimestamp = { clientId: this.client, clock: ++this.clock };
         }
-        // else {
-        //     this.clock = Math.max(this.clock, clientTimestamp.clock) + 1;
-        // }
+        else {
+            // let temp: RGANode | null = this.head;
+            // while (temp != null) {
+            //     if (temp.id.clientId === clientTimestamp.clientId && temp.id.clock === clientTimestamp.clock) {
+            //         return null;
+            //     }
+            //     temp = temp.next;
+            // }
+            this.clock = Math.max(this.clock, clientTimestamp.clock) + 1;
+        }
         // create node
         const nextNode = new RGANode(value, clientTimestamp);
         // traverse list to find originId
