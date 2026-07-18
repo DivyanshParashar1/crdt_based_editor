@@ -1,61 +1,75 @@
 import { RGA, type Timestamp, ROOT } from "../RGA.js";
 import type { OperationMessage } from "../protocol.interface.js"
 
+
+
+// const operations: OperationMessage[] = [];
+
+
+
+// produce
+
+function produce(replica: RGA, originId: Timestamp, value: string): OperationMessage | null {
+    const id = replica.insertAfter(originId, value, null);
+
+    if (id == null) return null;
+    const operation: OperationMessage = {
+        type: "insert",
+        insertOriginId: originId,
+        value,
+        id
+    }
+    return operation;
+}
+
+
+// deliver
+function deliver(replica: RGA, op: OperationMessage): void {
+    if (op.type === "insert") {
+        replica.insertAfter(op.insertOriginId, op.value, op.id);
+    }
+}
+
+
 const replicaA = new RGA("A");
 const replicaB = new RGA("B");
-const operations: OperationMessage[] = [];
-let top = 0;
-
-const originId: Timestamp = ROOT;
-const value = "H"
 
 
+// cases
 
+// 1 both edit off the same origin(root) before any sync
+const opFromA = produce(replicaA, ROOT, "A");
+const opFromB = produce(replicaB, ROOT, "B");
 
-// replicaA is the local RGA which this function is gonna refer to
-// operations is the array which it is gonna operate on
+// cross deliver
 
+console.log("First round")
+const textA1 = replicaA.getText();
+const textB1 = replicaB.getText();
 
-const triggerSend = (operation: OperationMessage | undefined) => {
-    if (operation && operation.type === "insert") {
-        replicaB.insertAfter(operation.insertOriginId, operation.value, operation.id);
-    }
-}
+console.log("replicaA:", textA1);
+console.log("replicaB:", textB1);
 
-const insertAndSend = (originId: Timestamp, value: string): void => {
-    const id = replicaA.insertAfter(originId, value, null);
+console.log(textA1 === textB1 ? "Converged" : "Diverged");
 
-    if (id === null) {
-        // the insert never happened, so no nned to worry
-    }
-    else {
-        operations.push({
-            type: "insert",
-            insertOriginId: originId,
-            value: value,
-            id: id
-        })
-        top++;
-        if (operations.at(-1) !== null) {
-            triggerSend(operations.at(-1));
-        }
-    }
-}
-
-
-insertAndSend(originId, value);
-insertAndSend(operations.at(-1)?.id || originId, "E");
-
-
-insertAndSend(operations.at(-1)?.id || originId, "L");
-insertAndSend(operations.at(-1)?.id || originId, "L");
-insertAndSend(operations.at(-1)?.id || originId, "O");
+if (opFromB) deliver(replicaA, opFromB);
+if (opFromA) deliver(replicaB, opFromA);
 
 
 
 
-console.log(replicaA.getText())
-console.log(replicaB.getText())
+// assertion
+console.log("Second round")
+
+const textA = replicaA.getText();
+const textB = replicaB.getText();
+console.log("replicaA:", textA);
+console.log("replicaB:", textB);
+
+console.log(textA === textB ? "Converged" : "Diverged");
+
+
+
 
 
 

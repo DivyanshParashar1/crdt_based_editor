@@ -77,7 +77,11 @@ export class RGA {
         //         temp2 = temp2.next;
         //     }
         // }
-        while (temp.next !== null && (temp.next.id.clock > nextNode.id.clock || (nextNode.id.clock === temp.next.id.clock && nextNode.id.clientId <= temp.next.id.clientId))) {
+        while (temp.next !== null && (temp.next.id.clock > nextNode.id.clock
+        // || (
+        //     nextNode.id.clock === temp.next.id.clock && nextNode.id.clientId <= temp.next.id.clientId
+        // )
+        )) {
             temp = temp.next;
         }
         // insert

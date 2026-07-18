@@ -4,6 +4,7 @@ export type Timestamp = {
     clock: number;
 };
 
+
 export class RGANode {
     value: string;
     id: Timestamp;
