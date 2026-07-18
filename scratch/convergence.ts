@@ -12,10 +12,10 @@ import type { OperationMessage } from "../protocol.interface.js"
 function produce(replica: RGA, originId: Timestamp, value: string): OperationMessage | null {
     const id = replica.insertAfter(originId, value, null);
 
-    if (id == null) return null;
+    if (id === null) return null;
     const operation: OperationMessage = {
         type: "insert",
-        insertOriginId: originId,
+        originId: originId,
         value,
         id
     }
@@ -26,7 +26,7 @@ function produce(replica: RGA, originId: Timestamp, value: string): OperationMes
 // deliver
 function deliver(replica: RGA, op: OperationMessage): void {
     if (op.type === "insert") {
-        replica.insertAfter(op.insertOriginId, op.value, op.id);
+        replica.insertAfter(op.originId, op.value, op.id);
     }
 }
 
