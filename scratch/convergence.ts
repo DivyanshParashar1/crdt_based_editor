@@ -127,3 +127,8 @@ const sampleDelete: Envelope = {
     version: PROTOCOL_VERSION,
     op: { type: "delete", id: { clientId: "A", clock: 1 } }
 }
+
+
+const e: Envelope = JSON.parse('{"versoin":1}');
+console.log(e.version);
+
