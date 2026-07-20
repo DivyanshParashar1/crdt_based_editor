@@ -113,3 +113,17 @@ console.log(textA === textB ? "Converged" : "Diverged");
 
 
 
+
+
+import { type Envelope, PROTOCOL_VERSION } from "../protocol.interface.js";
+
+
+const sampleInsert: Envelope = {
+    version: PROTOCOL_VERSION,
+    op: { type: "insert", originId: ROOT, value: "a", id: { clientId: "A", clock: 1 } }
+}
+
+const sampleDelete: Envelope = {
+    version: PROTOCOL_VERSION,
+    op: { type: "delete", id: { clientId: "A", clock: 1 } }
+}

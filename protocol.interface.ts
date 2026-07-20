@@ -1,6 +1,7 @@
 import type { Timestamp } from "./RGA.js";
 
 
+
 export type OperationType = 'insert' | 'delete';
 
 export interface InsertOperation {
@@ -14,6 +15,13 @@ export interface InsertOperation {
 export interface DeleteOperation {
     type: 'delete';
     id: Timestamp; // Lamport id of the node to be tombstoned
+}
+
+export const PROTOCOL_VERSION = 1;
+
+export interface Envelope {
+    version: number;
+    op: OperationMessage;
 }
 
 
