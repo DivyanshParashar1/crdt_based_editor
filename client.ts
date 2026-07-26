@@ -41,7 +41,7 @@ export class Client {
         }
     }
 
-    insertAndSend(originId: Timestamp, value: string): Timestamp | null {
+    public insertAndSend(originId: Timestamp, value: string): Timestamp | null {
 
 
         const id = this.clientReplica.insertAfter(originId, value, null);
@@ -66,7 +66,7 @@ export class Client {
         if (operation) protocol.applyOperation(this.clientReplica, operation);
     }
 
-    deleteAndSend(id: Timestamp) {
+    public deleteAndSend(id: Timestamp) {
         this.clientReplica.delete(id);
 
         const operation: DeleteOperation = {
@@ -76,6 +76,10 @@ export class Client {
         const serializedString = protocol.serialize(operation);
         this.queue.enqueue(serializedString);
         this.flush();
+    }
+
+    public getText(): string {
+        return this.clientReplica.getText();
     }
 
 }
