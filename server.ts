@@ -1,5 +1,5 @@
 import WebSocket, { WebSocketServer } from "ws";
-import crypto from "crypto";
+import crypto from "node:crypto";
 
 // adding id to socket
 interface customWebSocket extends WebSocket {

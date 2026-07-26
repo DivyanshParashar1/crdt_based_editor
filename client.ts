@@ -1,13 +1,13 @@
 import { RGA, type Timestamp } from "./RGA.js";
 import crypto from "node:crypto"
-import { type InsertOperation } from "./protocol.interface.js"
-import { serialize } from "./protocol.js";
+import { type InsertOperation, type DeleteOperation } from "./protocol.interface.js"
 import WebSocket from "ws";
+import * as protocol from "./protocol.js";
 
 
 
 
-class client {
+export class Client {
     public clientId: string;
     private clientReplica: RGA;
     private ws: WebSocket;
@@ -26,6 +26,9 @@ class client {
         this.queue = new Queue<string>();
         this.ws.on("open", () => {
             this.flush();
+        })
+        this.ws.on("message", (rawData) => {
+            this.handleMessage(rawData.toString());
         })
     }
 
@@ -51,10 +54,26 @@ class client {
             id
         };
 
-        const serializedString = serialize(operation);
+        const serializedString = protocol.serialize(operation);
         this.queue.enqueue(serializedString);
         this.flush();
 
+    }
+    private handleMessage(data: string): void {
+        const operation = protocol.deserialize(data);
+        if (operation) protocol.applyOperation(this.clientReplica, operation);
+    }
+
+    deleteAndSend(id: Timestamp) {
+        this.clientReplica.delete(id);
+
+        const operation: DeleteOperation = {
+            type: "delete",
+            id
+        };
+        const serializedString = protocol.serialize(operation);
+        this.queue.enqueue(serializedString);
+        this.flush();
     }
 
 }
