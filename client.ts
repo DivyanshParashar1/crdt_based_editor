@@ -41,12 +41,12 @@ export class Client {
         }
     }
 
-    insertAndSend(originId: Timestamp, value: string) {
+    insertAndSend(originId: Timestamp, value: string): Timestamp | null {
 
 
         const id = this.clientReplica.insertAfter(originId, value, null);
 
-        if (!id) return;
+        if (!id) return null;
         const operation: InsertOperation = {
             type: "insert",
             originId,
@@ -57,6 +57,8 @@ export class Client {
         const serializedString = protocol.serialize(operation);
         this.queue.enqueue(serializedString);
         this.flush();
+
+        return id;
 
     }
     private handleMessage(data: string): void {
