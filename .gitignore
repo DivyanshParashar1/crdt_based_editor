@@ -5,3 +5,5 @@ node_modules/.pnpm-workspace-state-v1.json
 learning
 dist
 dist/
+
+.env

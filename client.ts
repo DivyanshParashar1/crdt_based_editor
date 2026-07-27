@@ -1,37 +1,35 @@
 import { RGA, type Timestamp } from "./RGA.js";
-import crypto from "node:crypto";
 import {
   type InsertOperation,
   type DeleteOperation,
 } from "./protocol.interface.js";
-import WebSocket from "ws";
 import * as protocol from "./protocol.js";
+import { type Transport } from "./transport.interface.js";
 
 export class Client {
   public clientId: string;
   private clientReplica: RGA;
-  private ws: WebSocket;
   private queue: Queue<string>;
+  private socket: Transport;
 
-  constructor() {
+  constructor(transport: Transport) {
     this.clientId = crypto.randomUUID();
     this.clientReplica = new RGA(this.clientId);
-    this.ws = new WebSocket("ws://localhost:8080");
-    this.ws.on("error", (err) => {
-      console.log(err);
-    });
+    this.socket = transport;
     this.queue = new Queue<string>();
-
-    this.ws.on("message", (rawData) => {
-      this.handleMessage(rawData.toString());
+    this.socket.onMessage((raw) => {
+      this.handleMessage(raw);
+    });
+    this.socket.onOpen(() => {
+      this.flush();
     });
   }
 
   private flush() {
-    if (this.ws.readyState === WebSocket.OPEN) {
+    if (this.socket.isOpen()) {
       while (!this.queue.isEmpty()) {
         const temp = this.queue.dequeue();
-        if (temp) this.ws.send(temp);
+        if (temp) this.socket.send(temp);
       }
     }
   }

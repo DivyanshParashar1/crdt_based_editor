@@ -9,6 +9,9 @@
     // See also https://aka.ms/tsconfig/module
     "module": "nodenext",
     "target": "esnext",
+    // "dom" added for Phase D: the browser transport and the editor UI need
+    // WebSocket, HTMLTextAreaElement, document, etc. Node code is unaffected.
+    "lib": ["esnext", "dom"],
     "types": ["node"],
     // For nodejs:
     // "lib": ["esnext"],

@@ -7,9 +7,11 @@
 //
 // Run: pnpm exec tsx scratch/c4-convergence.ts
 
-import "../server.js"; // side-effect import: starts the relay in-process on :8080
+import "../server.js"; // side-effect import: starts the relay in-process on WS_PORT
 import { Client } from "../client.js";
 import { ROOT } from "../RGA.js";
+import { WsTransport } from "../transport.ws.js";
+import { WS_URL } from "../config.js";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -18,8 +20,12 @@ async function main() {
   // any client dials in (the connect would otherwise be refused)
   await sleep(500);
 
-  const a = new Client();
-  const b = new Client();
+  // ONE TRANSPORT EACH — not a shared instance. server.ts excludes the sender
+  // by socket identity (`client !== socket`), so two clients sharing a socket
+  // would each be excluded from the other's broadcast and neither would ever
+  // hear its peer. Two clients require two connections.
+  const a = new Client(new WsTransport(WS_URL));
+  const b = new Client(new WsTransport(WS_URL));
 
   // let both handshakes complete (ops would queue-and-flush anyway, but we
   // want a clean, settled start so the two inserts are genuinely concurrent)

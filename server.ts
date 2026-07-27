@@ -1,5 +1,6 @@
 import WebSocket, { WebSocketServer } from "ws";
 import crypto from "node:crypto";
+import { WS_PORT } from "./config.js";
 
 // adding id to socket
 interface customWebSocket extends WebSocket {
@@ -8,7 +9,7 @@ interface customWebSocket extends WebSocket {
 
 // starting a new wss
 const wss = new WebSocketServer({
-  port: 8080,
+  port: WS_PORT,
 });
 
 // new connection
