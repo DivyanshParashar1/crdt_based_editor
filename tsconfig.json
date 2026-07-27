@@ -12,7 +12,8 @@
     // "dom" added for Phase D: the browser transport and the editor UI need
     // WebSocket, HTMLTextAreaElement, document, etc. Node code is unaffected.
     "lib": ["esnext", "dom"],
-    "types": ["node"],
+    // "vite/client" types import.meta.env for web/main.ts.
+    "types": ["node", "vite/client"],
     // For nodejs:
     // "lib": ["esnext"],
     // "types": ["node"],

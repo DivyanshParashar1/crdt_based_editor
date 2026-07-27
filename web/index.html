@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>CRDT Editor — two replicas, one document</title>
+        <link rel="stylesheet" href="./styles.css" />
+    </head>
+    <body>
+        <header class="masthead">
+            <h1>CRDT Collaborative Editor</h1>
+            <p>
+                Two independent replicas, one relay, no central authority. Type
+                in either pane — convergence is the CRDT's job, not the server's.
+            </p>
+        </header>
+
+        <main class="panes">
+            <section class="pane" data-pane="a">
+                <div class="pane-head">
+                    <span class="pane-label">Replica A</span>
+                    <span class="pane-id" data-role="id">—</span>
+                    <span class="pane-status" data-role="status">
+                        <i class="dot"></i><span data-role="status-text">connecting</span>
+                    </span>
+                </div>
+                <textarea
+                    data-role="editor"
+                    spellcheck="false"
+                    autocomplete="off"
+                    placeholder="Start typing…"
+                ></textarea>
+                <div class="pane-foot">
+                    <span data-role="chars">0 chars</span>
+                </div>
+            </section>
+
+            <section class="pane" data-pane="b">
+                <div class="pane-head">
+                    <span class="pane-label">Replica B</span>
+                    <span class="pane-id" data-role="id">—</span>
+                    <span class="pane-status" data-role="status">
+                        <i class="dot"></i><span data-role="status-text">connecting</span>
+                    </span>
+                </div>
+                <textarea
+                    data-role="editor"
+                    spellcheck="false"
+                    autocomplete="off"
+                    placeholder="…and watch it appear on the left"
+                ></textarea>
+                <div class="pane-foot">
+                    <span data-role="chars">0 chars</span>
+                </div>
+            </section>
+        </main>
+
+        <footer class="statusbar">
+            <span data-role="converged" class="badge">—</span>
+            <span class="hint">
+                Panes stay blank until <code>applyLocalEdit()</code> in
+                <code>edits.ts</code> is implemented (D2).
+            </span>
+        </footer>
+
+        <script type="module" src="./main.ts"></script>
+    </body>
+</html>

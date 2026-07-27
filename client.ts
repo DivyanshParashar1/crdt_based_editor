@@ -11,6 +11,7 @@ export class Client {
   private clientReplica: RGA;
   private queue: Queue<string>;
   private socket: Transport;
+  private remoteChangeHandlers: Array<() => void> = [];
 
   constructor(transport: Transport) {
     this.clientId = crypto.randomUUID();
@@ -53,7 +54,20 @@ export class Client {
   }
   private handleMessage(data: string): void {
     const operation = protocol.deserialize(data);
-    if (operation) protocol.applyOperation(this.clientReplica, operation);
+    if (!operation) return;
+
+    protocol.applyOperation(this.clientReplica, operation);
+
+    // A remote op mutates the replica with no UI involvement, so anything
+    // rendering this replica has to be told. Same subscription shape as
+    // Transport.onOpen — Client stays ignorant of who is listening or whether a
+    // DOM exists at all, so this costs the Node entry points nothing.
+    for (const handler of this.remoteChangeHandlers) handler();
+  }
+
+  /** Subscribe to "a remote operation has just been applied to this replica." */
+  public onRemoteChange(handler: () => void): void {
+    this.remoteChangeHandlers.push(handler);
   }
 
   public deleteAndSend(id: Timestamp) {
