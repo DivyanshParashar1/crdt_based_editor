@@ -1,39 +1,36 @@
 import { RGA, type Timestamp, ROOT } from "../RGA.js";
-import type { OperationMessage } from "../protocol.interface.js"
-
-
+import type { OperationMessage } from "../protocol.interface.js";
 
 // const operations: OperationMessage[] = [];
 
-
-
 // produce
 
-function produce(replica: RGA, originId: Timestamp, value: string): OperationMessage | null {
-    const id = replica.insertAfter(originId, value, null);
+function produce(
+  replica: RGA,
+  originId: Timestamp,
+  value: string,
+): OperationMessage | null {
+  const id = replica.insertAfter(originId, value, null);
 
-    if (id === null) return null;
-    const operation: OperationMessage = {
-        type: "insert",
-        originId: originId,
-        value,
-        id
-    }
-    return operation;
+  if (id === null) return null;
+  const operation: OperationMessage = {
+    type: "insert",
+    originId: originId,
+    value,
+    id,
+  };
+  return operation;
 }
-
 
 // deliver
 function deliver(replica: RGA, op: OperationMessage): void {
-    if (op.type === "insert") {
-        replica.insertAfter(op.originId, op.value, op.id);
-    }
+  if (op.type === "insert") {
+    replica.insertAfter(op.originId, op.value, op.id);
+  }
 }
-
 
 const replicaA = new RGA("A");
 const replicaB = new RGA("B");
-
 
 // case 1: Both edit with the same clock, and checking convergence
 
@@ -55,9 +52,6 @@ const replicaB = new RGA("B");
 // if (opFromB) deliver(replicaA, opFromB);
 // if (opFromA) deliver(replicaB, opFromA);
 
-
-
-
 // // assertion
 // console.log("Second round")
 
@@ -67,9 +61,6 @@ const replicaB = new RGA("B");
 // console.log("replicaB:", textB);
 
 // console.log(textA === textB ? "Converged" : "Diverged");
-
-
-
 
 // case 2, checking the tiebreaker: clientId
 
@@ -93,14 +84,13 @@ const replicaB = new RGA("B");
 
 // console.log(textA === textB ? "Converged" : "Diverged");
 
-
 // case 3
 
 const first = produce(replicaA, ROOT, "a");
 
 if (first !== null) {
-    deliver(replicaB, first);
-    deliver(replicaB, first);
+  deliver(replicaB, first);
+  deliver(replicaB, first);
 }
 
 const textB = replicaB.getText();
@@ -111,24 +101,22 @@ console.log(textA);
 console.log(textB);
 console.log(textA === textB ? "Converged" : "Diverged");
 
-
-
-
-
 import { type Envelope, PROTOCOL_VERSION } from "../protocol.interface.js";
 
-
 const sampleInsert: Envelope = {
-    version: PROTOCOL_VERSION,
-    op: { type: "insert", originId: ROOT, value: "a", id: { clientId: "A", clock: 1 } }
-}
+  version: PROTOCOL_VERSION,
+  op: {
+    type: "insert",
+    originId: ROOT,
+    value: "a",
+    id: { clientId: "A", clock: 1 },
+  },
+};
 
 const sampleDelete: Envelope = {
-    version: PROTOCOL_VERSION,
-    op: { type: "delete", id: { clientId: "A", clock: 1 } }
-}
-
+  version: PROTOCOL_VERSION,
+  op: { type: "delete", id: { clientId: "A", clock: 1 } },
+};
 
 const e: Envelope = JSON.parse('{"versoin":1}');
 console.log(e.version);
-

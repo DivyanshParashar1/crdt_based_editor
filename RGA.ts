@@ -1,123 +1,126 @@
 // The unique identifier for every operation/node
 export type Timestamp = {
-    clientId: string;
-    clock: number;
+  clientId: string;
+  clock: number;
 };
 
-
 export class RGANode {
-    value: string;
-    id: Timestamp;
-    isDeleted: boolean;
-    next: RGANode | null;
+  value: string;
+  id: Timestamp;
+  isDeleted: boolean;
+  next: RGANode | null;
 
-    constructor(value: string, id: Timestamp) {
-        this.value = value;
-        this.id = id;
-        this.isDeleted = false;
-        this.next = null;
-    }
+  constructor(value: string, id: Timestamp) {
+    this.value = value;
+    this.id = id;
+    this.isDeleted = false;
+    this.next = null;
+  }
 }
 export const ROOT: Timestamp = Object.freeze({ clientId: "", clock: 0 });
 
 export class RGA {
-    private client: string;
-    private clock: number;
-    private head: RGANode; // A dummy 'start of document' node
+  private client: string;
+  private clock: number;
+  private head: RGANode; // A dummy 'start of document' node
 
-    constructor(clientId: string) {
-        this.client = clientId;
-        this.clock = 0;
+  constructor(clientId: string) {
+    this.client = clientId;
+    this.clock = 0;
 
-        this.head = new RGANode("__HEAD__", ROOT);
+    this.head = new RGANode("__HEAD__", ROOT);
+  }
+
+  // 1. Increment local clock
+  // 2. Create node
+  // 3. Traverse list to find originId
+  // 4. Apply Lamport tie-breaking if concurrent nodes exist
+  // 5. Insert and return the new node's ID
+  insertAfter(
+    originId: Timestamp,
+    value: string,
+    clientTimestamp: Timestamp | null,
+  ): Timestamp | null {
+    // increment local clock
+    if (clientTimestamp === null) {
+      clientTimestamp = { clientId: this.client, clock: ++this.clock };
+    } else {
+      let temp: RGANode | null = this.head;
+
+      while (temp !== null) {
+        if (
+          temp.id.clientId === clientTimestamp.clientId &&
+          temp.id.clock === clientTimestamp.clock
+        ) {
+          return null;
+        }
+        temp = temp.next;
+      }
+      this.clock = Math.max(this.clock, clientTimestamp.clock) + 1;
     }
 
-    // 1. Increment local clock
-    // 2. Create node
-    // 3. Traverse list to find originId
-    // 4. Apply Lamport tie-breaking if concurrent nodes exist
-    // 5. Insert and return the new node's ID
-    insertAfter(originId: Timestamp, value: string, clientTimestamp: Timestamp | null): Timestamp | null {
-        // increment local clock
-        if (clientTimestamp === null) {
-            clientTimestamp = { clientId: this.client, clock: ++this.clock }
-        }
-        else {
-            let temp: RGANode | null = this.head;
+    // create node
+    const nextNode = new RGANode(value, clientTimestamp);
 
-            while (temp !== null) {
-                if (temp.id.clientId === clientTimestamp.clientId && temp.id.clock === clientTimestamp.clock) {
-                    return null;
-                }
-                temp = temp.next;
-            }
-            this.clock = Math.max(this.clock, clientTimestamp.clock) + 1;
-        }
+    // traverse list to find originId
+    let temp: RGANode | null = this.head;
 
-        // create node
-        const nextNode = new RGANode(value, clientTimestamp);
-
-        // traverse list to find originId
-        let temp: RGANode | null = this.head;
-
-        while (temp !== null) {
-            if (temp.id.clientId === originId.clientId && temp.id.clock === originId.clock) {
-                break;
-            }
-            temp = temp.next;
-        }
-
-        if (temp === null) {
-            console.warn("Origin node not found");
-            return null;
-        }
-
-
-        while (temp.next !== null && (
-            temp.next.id.clock > nextNode.id.clock || (
-                nextNode.id.clock === temp.next.id.clock && nextNode.id.clientId <= temp.next.id.clientId
-            )
-        )) {
-            temp = temp.next;
-        }
-
-        // insert
-        nextNode.next = temp.next;
-        temp.next = nextNode;
-
-        return nextNode.id;
+    while (temp !== null) {
+      if (
+        temp.id.clientId === originId.clientId &&
+        temp.id.clock === originId.clock
+      ) {
+        break;
+      }
+      temp = temp.next;
     }
 
-
-    // Find the node by ID and mark isDeleted = true
-    delete(id: Timestamp): void {
-        // given a timestamp we need to delete
-        let temp: RGANode | null = this.head.next;
-        while (temp !== null) {
-            if (temp.id.clock === id.clock && temp.id.clientId === id.clientId) {
-                temp.isDeleted = true;
-                break;
-            }
-            temp = temp.next;
-        }
-        if (temp === null) console.warn("Node not found");
-
-
-
-
+    if (temp === null) {
+      console.warn("Origin node not found");
+      return null;
     }
 
-    // Traverse the list and return the visible string (ignoring tombstones)
-    getText(): string {
-        let str: string = "";
-        let temp: RGANode | null = this.head.next;
-
-        while (temp !== null) {
-            if (!temp.isDeleted) {
-                str += temp.value;
-            }
-            temp = temp.next;
-        }
-        return str;
+    while (
+      temp.next !== null &&
+      (temp.next.id.clock > nextNode.id.clock ||
+        (nextNode.id.clock === temp.next.id.clock &&
+          nextNode.id.clientId <= temp.next.id.clientId))
+    ) {
+      temp = temp.next;
     }
+
+    // insert
+    nextNode.next = temp.next;
+    temp.next = nextNode;
+
+    return nextNode.id;
+  }
+
+  // Find the node by ID and mark isDeleted = true
+  delete(id: Timestamp): void {
+    // given a timestamp we need to delete
+    let temp: RGANode | null = this.head.next;
+    while (temp !== null) {
+      if (temp.id.clock === id.clock && temp.id.clientId === id.clientId) {
+        temp.isDeleted = true;
+        break;
+      }
+      temp = temp.next;
+    }
+    if (temp === null) console.warn("Node not found");
+  }
+
+  // Traverse the list and return the visible string (ignoring tombstones)
+  getText(): string {
+    let str: string = "";
+    let temp: RGANode | null = this.head.next;
+
+    while (temp !== null) {
+      if (!temp.isDeleted) {
+        str += temp.value;
+      }
+      temp = temp.next;
+    }
+    return str;
+  }
 }

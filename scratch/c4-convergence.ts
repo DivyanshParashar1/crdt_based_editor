@@ -14,37 +14,37 @@ import { ROOT } from "../RGA.js";
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function main() {
-    // give the WebSocketServer a moment to reach its 'listening' state before
-    // any client dials in (the connect would otherwise be refused)
-    await sleep(500);
+  // give the WebSocketServer a moment to reach its 'listening' state before
+  // any client dials in (the connect would otherwise be refused)
+  await sleep(500);
 
-    const a = new Client();
-    const b = new Client();
+  const a = new Client();
+  const b = new Client();
 
-    // let both handshakes complete (ops would queue-and-flush anyway, but we
-    // want a clean, settled start so the two inserts are genuinely concurrent)
-    await sleep(500);
+  // let both handshakes complete (ops would queue-and-flush anyway, but we
+  // want a clean, settled start so the two inserts are genuinely concurrent)
+  await sleep(500);
 
-    // CONCURRENT: both insert after the same origin, back-to-back, before either
-    // op has round-tripped. The (clock, clientId) tie-break must order these the
-    // SAME way on both replicas or they diverge.
-    a.insertAndSend(ROOT, "A");
-    b.insertAndSend(ROOT, "B");
+  // CONCURRENT: both insert after the same origin, back-to-back, before either
+  // op has round-tripped. The (clock, clientId) tie-break must order these the
+  // SAME way on both replicas or they diverge.
+  a.insertAndSend(ROOT, "A");
+  b.insertAndSend(ROOT, "B");
 
-    // let the relay deliver and both replicas apply
-    await sleep(800);
+  // let the relay deliver and both replicas apply
+  await sleep(800);
 
-    const textA = a.getText();
-    const textB = b.getText();
-    const converged = textA === textB;
+  const textA = a.getText();
+  const textB = b.getText();
+  const converged = textA === textB;
 
-    console.log("--------------------------------------------------");
-    console.log(`clientA id=${a.clientId.slice(0, 8)}  getText() = "${textA}"`);
-    console.log(`clientB id=${b.clientId.slice(0, 8)}  getText() = "${textB}"`);
-    console.log(`CONVERGED: ${converged}`);
-    console.log("--------------------------------------------------");
+  console.log("--------------------------------------------------");
+  console.log(`clientA id=${a.clientId.slice(0, 8)}  getText() = "${textA}"`);
+  console.log(`clientB id=${b.clientId.slice(0, 8)}  getText() = "${textB}"`);
+  console.log(`CONVERGED: ${converged}`);
+  console.log("--------------------------------------------------");
 
-    process.exit(converged ? 0 : 1);
+  process.exit(converged ? 0 : 1);
 }
 
 main();

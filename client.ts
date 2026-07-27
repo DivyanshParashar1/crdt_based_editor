@@ -1,100 +1,90 @@
 import { RGA, type Timestamp } from "./RGA.js";
-import crypto from "node:crypto"
-import { type InsertOperation, type DeleteOperation } from "./protocol.interface.js"
+import crypto from "node:crypto";
+import {
+  type InsertOperation,
+  type DeleteOperation,
+} from "./protocol.interface.js";
 import WebSocket from "ws";
 import * as protocol from "./protocol.js";
 
-
-
-
 export class Client {
-    public clientId: string;
-    private clientReplica: RGA;
-    private ws: WebSocket;
-    private queue: Queue<string>
+  public clientId: string;
+  private clientReplica: RGA;
+  private ws: WebSocket;
+  private queue: Queue<string>;
 
-    constructor() {
-        this.clientId = crypto.randomUUID();
-        this.clientReplica = new RGA(this.clientId);
-        this.ws = new WebSocket("ws://localhost:8080");
-        this.ws.on("error", (err) => {
-            console.log(err);
-        })
-        this.ws.on("close", (close) => {
-            console.log(close);
-        });
-        this.queue = new Queue<string>();
-        this.ws.on("open", () => {
-            this.flush();
-        })
-        this.ws.on("message", (rawData) => {
-            this.handleMessage(rawData.toString());
-        })
+  constructor() {
+    this.clientId = crypto.randomUUID();
+    this.clientReplica = new RGA(this.clientId);
+    this.ws = new WebSocket("ws://localhost:8080");
+    this.ws.on("error", (err) => {
+      console.log(err);
+    });
+    this.queue = new Queue<string>();
+
+    this.ws.on("message", (rawData) => {
+      this.handleMessage(rawData.toString());
+    });
+  }
+
+  private flush() {
+    if (this.ws.readyState === WebSocket.OPEN) {
+      while (!this.queue.isEmpty()) {
+        const temp = this.queue.dequeue();
+        if (temp) this.ws.send(temp);
+      }
     }
+  }
 
-    private flush() {
-        if (this.ws.readyState === WebSocket.OPEN) {
-            while (!this.queue.isEmpty()) {
-                const temp = this.queue.dequeue();
-                if (temp) this.ws.send(temp);
-            }
-        }
-    }
+  public insertAndSend(originId: Timestamp, value: string): Timestamp | null {
+    const id = this.clientReplica.insertAfter(originId, value, null);
 
-    public insertAndSend(originId: Timestamp, value: string): Timestamp | null {
+    if (!id) return null;
+    const operation: InsertOperation = {
+      type: "insert",
+      originId,
+      value,
+      id,
+    };
 
+    const serializedString = protocol.serialize(operation);
+    this.queue.enqueue(serializedString);
+    this.flush();
 
-        const id = this.clientReplica.insertAfter(originId, value, null);
+    return id;
+  }
+  private handleMessage(data: string): void {
+    const operation = protocol.deserialize(data);
+    if (operation) protocol.applyOperation(this.clientReplica, operation);
+  }
 
-        if (!id) return null;
-        const operation: InsertOperation = {
-            type: "insert",
-            originId,
-            value,
-            id
-        };
+  public deleteAndSend(id: Timestamp) {
+    this.clientReplica.delete(id);
 
-        const serializedString = protocol.serialize(operation);
-        this.queue.enqueue(serializedString);
-        this.flush();
+    const operation: DeleteOperation = {
+      type: "delete",
+      id,
+    };
+    const serializedString = protocol.serialize(operation);
+    this.queue.enqueue(serializedString);
+    this.flush();
+  }
 
-        return id;
-
-    }
-    private handleMessage(data: string): void {
-        const operation = protocol.deserialize(data);
-        if (operation) protocol.applyOperation(this.clientReplica, operation);
-    }
-
-    public deleteAndSend(id: Timestamp) {
-        this.clientReplica.delete(id);
-
-        const operation: DeleteOperation = {
-            type: "delete",
-            id
-        };
-        const serializedString = protocol.serialize(operation);
-        this.queue.enqueue(serializedString);
-        this.flush();
-    }
-
-    public getText(): string {
-        return this.clientReplica.getText();
-    }
-
+  public getText(): string {
+    return this.clientReplica.getText();
+  }
 }
 
-
 class Queue<T> {
-    private queue: T[] = [];
+  private queue: T[] = [];
 
-    enqueue(item: T): void {
-        this.queue.push(item);
-    }
-    dequeue(): T | undefined {
-        return this.queue.shift();
-    }
-    isEmpty(): boolean {
-        return this.queue.length === 0;
-    }
+  enqueue(item: T): void {
+    this.queue.push(item);
+  }
+  dequeue(): T | undefined {
+    return this.queue.shift();
+  }
+  isEmpty(): boolean {
+    return this.queue.length === 0;
+  }
 }
