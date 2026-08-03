@@ -123,4 +123,7 @@ export class RGA {
     }
     return str;
   }
+  public getHead(): RGANode {
+    return this.head;
+  }
 }

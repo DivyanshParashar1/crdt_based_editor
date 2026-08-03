@@ -1,4 +1,4 @@
-import { RGA, type Timestamp } from "./RGA.js";
+import { RGA, type Timestamp, ROOT, RGANode } from "./RGA.js";
 import {
   type InsertOperation,
   type DeleteOperation,
@@ -84,6 +84,51 @@ export class Client {
 
   public getText(): string {
     return this.clientReplica.getText();
+  }
+
+  public getNodeIdAtVisibleIndex(visibleIndex: number): Timestamp {
+    if (visibleIndex === 0) return ROOT;
+
+    let currentVisibleIndex = 0;
+    let node: RGANode | null = this.clientReplica.getHead().next;
+
+    while (node !== null) {
+      if (!node.isDeleted) {
+        currentVisibleIndex++;
+        if (currentVisibleIndex === visibleIndex) {
+          return node.id;
+        }
+      }
+
+      node = node.next;
+    }
+    return ROOT;
+  }
+
+  public getNodeIdsInVisibleRange(
+    visibleStart: number,
+    visibleEnd: number,
+  ): Timestamp[] {
+    const ids: Timestamp[] = [];
+    let currentVisibleIndex = 0;
+    let node: RGANode | null = this.clientReplica.getHead().next;
+
+    while (node !== null) {
+      if (!node.isDeleted) {
+        if (
+          currentVisibleIndex >= visibleStart &&
+          currentVisibleIndex < visibleEnd
+        ) {
+          ids.push(node.id);
+        }
+        if (currentVisibleIndex >= visibleEnd) {
+          break;
+        }
+        currentVisibleIndex++;
+      }
+      node = node.next;
+    }
+    return ids;
   }
 }
 

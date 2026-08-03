@@ -8,22 +8,22 @@ import { defineConfig } from "vite";
 // in those imports to the ".ts" sources, so the NodeNext-style extensions the
 // rest of the project uses keep working unchanged.
 export default defineConfig({
-    root: "web",
-    // Read .env from the project root, not from web/, so Node and browser share
-    // one config file. Only VITE_-prefixed vars are exposed to browser code —
-    // Vite's guard against leaking secrets into a public bundle.
-    envDir: "..",
-    server: {
-        // Not Vite's default 5173 — your screenify_frontend dev server already
-        // owns that port, and silently landing on 5174 makes for confusing
-        // "why am I looking at the wrong app" moments.
-        port: 5180,
-        strictPort: true,
-        // Files live above `root`, so the dev server needs read access there.
-        fs: { allow: [".."] },
-    },
-    build: {
-        outDir: "../dist-web",
-        emptyOutDir: true,
-    },
+  root: "web",
+  // Read .env from the project root, not from web/, so Node and browser share
+  // one config file. Only VITE_-prefixed vars are exposed to browser code —
+  // Vite's guard against leaking secrets into a public bundle.
+  envDir: "..",
+  server: {
+    // Not Vite's default 5173 — your screenify_frontend dev server already
+    // owns that port, and silently landing on 5174 makes for confusing
+    // "why am I looking at the wrong app" moments.
+    port: 5180,
+    strictPort: true,
+    // Files live above `root`, so the dev server needs read access there.
+    fs: { allow: [".."] },
+  },
+  build: {
+    outDir: "../dist-web",
+    emptyOutDir: true,
+  },
 });

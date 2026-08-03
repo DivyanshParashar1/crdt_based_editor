@@ -15,14 +15,14 @@ import { EditorPane } from "./editor.js";
 const WS_URL: string = import.meta.env["VITE_WS_URL"] ?? "ws://localhost:8080";
 
 function mount(paneSelector: string): EditorPane {
-    const root = document.querySelector<HTMLElement>(paneSelector);
-    if (!root) throw new Error(`missing pane: ${paneSelector}`);
+  const root = document.querySelector<HTMLElement>(paneSelector);
+  if (!root) throw new Error(`missing pane: ${paneSelector}`);
 
-    // One transport per pane — two sockets, exactly as C4 needs, and for the
-    // same reason: server.ts excludes the sender by socket identity, so two
-    // replicas sharing a connection would never hear each other.
-    const transport = new BrowserTransport(WS_URL);
-    return new EditorPane(root, new Client(transport), transport);
+  // One transport per pane — two sockets, exactly as C4 needs, and for the
+  // same reason: server.ts excludes the sender by socket identity, so two
+  // replicas sharing a connection would never hear each other.
+  const transport = new BrowserTransport(WS_URL);
+  return new EditorPane(root, new Client(transport), transport);
 }
 
 const paneA = mount('[data-pane="a"]');
@@ -33,8 +33,8 @@ const paneB = mount('[data-pane="b"]');
 // textareas so it reports on the CRDT, not on the DOM.
 const badge = document.querySelector<HTMLElement>('[data-role="converged"]');
 setInterval(() => {
-    if (!badge) return;
-    const converged = paneA.getText() === paneB.getText();
-    badge.dataset["state"] = converged ? "converged" : "diverged";
-    badge.textContent = converged ? "replicas converged" : "replicas diverged";
+  if (!badge) return;
+  const converged = paneA.getText() === paneB.getText();
+  badge.dataset["state"] = converged ? "converged" : "diverged";
+  badge.textContent = converged ? "replicas converged" : "replicas diverged";
 }, 500);
