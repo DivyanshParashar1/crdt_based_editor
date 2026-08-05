@@ -2,7 +2,7 @@
 // RGA, Lamport clocks, or the wire. Every CRDT decision it needs is delegated
 // across the seam in edits.ts.
 
-import type { Client } from "../client.js";
+import type { Client, RemoteChange } from "../client.js";
 import type { Transport } from "../transport.interface.js";
 import { applyLocalEdit } from "../edits.js";
 
@@ -10,6 +10,41 @@ function must<T extends Element>(root: ParentNode, selector: string): T {
   const el = root.querySelector<T>(selector);
   if (!el) throw new Error(`missing element: ${selector}`);
   return el;
+}
+
+/**
+ * Where one caret offset lands after a remote change.
+ *
+ * The invariant: the caret stays glued to the same *character*, so the user
+ * never sees it drift. Everything below is that one sentence, case-split.
+ */
+function shiftCaret(caret: number, change: RemoteChange): number {
+  if (change.type === "insert") {
+    // Strictly-before pushes the caret right; at-or-after leaves it alone.
+    //
+    // `<` rather than `<=` is a genuine judgement call, not an off-by-one.
+    // When a remote character lands exactly AT the caret, someone has to own
+    // that offset. `<` means it appears to the RIGHT of your caret and you keep
+    // typing in front of it; `<=` would mean their text keeps shoving you
+    // rightwards while you type. The first behaviour is what editors do.
+    return change.index < caret ? caret + change.length : caret;
+  }
+
+  const deleteEnd = change.index + change.length;
+
+  // Entirely before the caret: everything after the cut slides left, and the
+  // caret is part of "everything after". (caret 6, delete 2 chars at 4 -> 4.)
+  if (deleteEnd <= caret) return caret - change.length;
+
+  // Entirely at or after the caret: the text in front of the caret is
+  // untouched, so its offset is untouched.
+  if (change.index >= caret) return caret;
+
+  // Straddles the caret: the character it was glued to is gone, so the closest
+  // surviving anchor is the start of the hole. Unreachable while ops are
+  // single-character, but the rule is stated so a batched delete cannot
+  // silently fall through to a wrong branch.
+  return change.index;
 }
 
 export class EditorPane {
@@ -47,15 +82,18 @@ export class EditorPane {
     this.textarea.addEventListener("input", () => this.onLocalInput());
 
     // Remote ops mutate the replica with no DOM involvement, so the pane has
-    // to be told to re-read it.
-    this.client.onRemoteChange(() => this.renderFromReplica());
+    // to be told to re-read it — and told *where* it changed, or the caret
+    // cannot be corrected.
+    this.client.onRemoteChange((change) => this.renderFromReplica(change));
 
     this.transport.onOpen(() => this.setStatus("open", "connected"));
     setInterval(() => {
       if (!this.transport.isOpen()) this.setStatus("closed", "disconnected");
     }, 1000);
 
-    this.renderFromReplica();
+    // Initial paint: nothing changed relative to anything, so no caret rule
+    // applies.
+    this.renderFromReplica(null);
   }
 
   private onLocalInput(): void {
@@ -75,21 +113,28 @@ export class EditorPane {
   }
 
   /**
-   * Re-render the textarea from the replica after a remote op.
+   * Re-render the textarea from the replica after a remote op, correcting the
+   * caret so it stays glued to the same character (D3).
    *
-   * CARET PRESERVATION (D3): this keeps the caret at the same numeric offset,
-   * which is only correct when the remote edit landed *after* the caret. If a
-   * remote insert lands before it, the local caret should shift right by the
-   * inserted length or it visibly drifts backwards while you type. Deciding
-   * that rule is yours — the setSelectionRange mechanics below are the part
-   * that stays mine.
+   * `change` is null for the initial paint and for ops that left visible text
+   * untouched — in both cases the offsets carry over unmodified.
    */
-  private renderFromReplica(): void {
+  private renderFromReplica(change: RemoteChange | null): void {
     const next = this.client.getText();
     if (next === this.textarea.value) return;
 
-    const start = this.textarea.selectionStart;
-    const end = this.textarea.selectionEnd;
+    // Read the offsets BEFORE touching .value — the assignment below destroys
+    // them.
+    let start = this.textarea.selectionStart;
+    let end = this.textarea.selectionEnd;
+
+    if (change) {
+      // A selection has two independent anchors. They are shifted separately
+      // because a remote change can land between them, in which case the
+      // selection legitimately grows or shrinks rather than sliding.
+      start = shiftCaret(start, change);
+      end = shiftCaret(end, change);
+    }
 
     // Assigning .value resets the selection to the end of the text, so the
     // caret must be restored explicitly on the next line — that reset is
